@@ -15,7 +15,6 @@ public interface ReplyMapper {
 
 	@Mapping(target = "id", ignore = true)
 	@Mapping(target = "createdAt", ignore = true)
-	@Mapping(target = "postId", source = "postId")
 	@Mapping(target = "content", source = "request.content", qualifiedByName = "trimmed")
 	ReplyEntity toEntity(CreateReplyRequest request, Long postId);
 
