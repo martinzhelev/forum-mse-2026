@@ -7,6 +7,9 @@ import com.mse.edu.forum.mapper.PostMapper;
 import com.mse.edu.forum.repo.PostRepository;
 import java.util.List;
 import java.util.Optional;
+
+import com.mse.edu.forum.repo.custom.PostRepositoryCustom;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,16 +17,22 @@ import org.springframework.transaction.annotation.Transactional;
 public class PostService {
 
 	private final PostRepository postRepository;
+    private final PostRepositoryCustom postRepositoryCustom;
 	private final PostMapper postMapper;
 
-	public PostService(PostRepository postRepository, PostMapper postMapper) {
+	public PostService(PostRepository postRepository, PostRepositoryCustom postRepositoryCustom, PostMapper postMapper) {
 		this.postRepository = postRepository;
+        this.postRepositoryCustom = postRepositoryCustom;
 		this.postMapper = postMapper;
 	}
 
 	@Transactional(readOnly = true)
 	public List<PostResponse> findAll() {
-		return postRepository.findAll().stream().map(postMapper::toResponse).toList();
+		return entityListToResponse(postRepository.findAll());
+//      return entityListToResponse(postRepository.findAll(PageRequest.of(0,2)).getContent());
+//      return entityListToResponse(postRepository.findByUserId((long)2));
+//      return entityListToResponse(postRepository.whatDoesThisQueryFindByUserId((long)2));
+//      return entityListToResponse(postRepositoryCustom.findPostsByUserId((long)2));
 	}
 
 	@Transactional(readOnly = true)
@@ -37,4 +46,13 @@ public class PostService {
 		PostEntity saved = postRepository.save(postEntity);
 		return postMapper.toResponse(saved);
 	}
+
+    @Transactional(readOnly = true)
+    public List<PostResponse> findByUserId() {
+        return postRepository.findAll().stream().map(postMapper::toResponse).toList();
+    }
+
+    private List<PostResponse> entityListToResponse(List<PostEntity> entities){
+        return entities.stream().map(postMapper::toResponse).toList();
+    }
 }
