@@ -27,6 +27,15 @@ app:
     # HS256: use at least 32 bytes.
     secret: ${JWT_SECRET}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  restore:
+    enabled: ${APP_RESTORE_ENABLED:false}
+    retry-after-seconds: 120
+    allowlist:
+      - /livez
+      - /readyz
+      - /actuator/health/**
+      - /actuator/info
+      - /ops/restore/**
 
 # OpenAPI model from classpath (OpenApiFromSpecConfig); JSON at springdoc path below.
 springdoc:
