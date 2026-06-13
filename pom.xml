@@ -228,7 +228,9 @@
 							<version>${mapstruct.version}</version>
 						</path>
 					</annotationProcessorPaths>
-				</configuration>
+                    <source>16</source>
+                    <target>16</target>
+                </configuration>
 			</plugin>
 		</plugins>
 	</build>

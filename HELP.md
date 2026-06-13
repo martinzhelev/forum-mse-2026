@@ -118,3 +118,19 @@ Suggested probe mapping (for orchestrators like Kubernetes):
 - **livenessProbe** -> `/livez`
 - **readinessProbe** -> `/readyz`
 
+## React frontend
+
+The React client in `frontend/` covers posts, replies, authentication, profile
+updates, user administration, health status, and restore maintenance mode.
+
+Run the backend on port `9000`, then start the frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Vite serves the client at `http://localhost:5173` and proxies API requests to
+the backend. For a separate production deployment, set `VITE_API_BASE_URL` to
+the public backend URL before running `npm run build`.

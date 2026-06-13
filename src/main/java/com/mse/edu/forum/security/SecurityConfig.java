@@ -19,7 +19,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
 	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter)
+	public SecurityFilterChain securityFilterChain(
+			HttpSecurity http,
+			JwtAuthenticationFilter jwtFilter,
+			MaintenanceModeFilter maintenanceModeFilter)
 			throws Exception {
 		http.csrf(AbstractHttpConfigurer::disable);
 		http.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
@@ -31,10 +34,12 @@ public class SecurityConfig {
 				.requestMatchers(HttpMethod.GET, "/replies", "/replies/**").permitAll()
 				.requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
 				.requestMatchers("/livez", "/readyz").permitAll()
+				.requestMatchers("/admin/maintenance/**").hasRole("ADMIN")
 				.requestMatchers("/v3/api-docs/**", "/scalar/**", "/docs").permitAll()
 				.requestMatchers("/error").permitAll()
 				.anyRequest()
 				.authenticated());
+		http.addFilterBefore(maintenanceModeFilter, JwtAuthenticationFilter.class);
 		http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 		return http.build();
 	}

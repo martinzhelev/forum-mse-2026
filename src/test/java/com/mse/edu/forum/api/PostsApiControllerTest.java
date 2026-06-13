@@ -1,10 +1,12 @@
 package com.mse.edu.forum.api;
 
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.mse.edu.forum.repo.PostRepository;
@@ -173,6 +175,89 @@ class PostsApiControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$[0].title").value("Post A"))
 				.andExpect(jsonPath("$[1].title").value("Post B"));
+	}
+
+	@Test
+	void restoreMode_blocksRegularEndpointsWith503AndRetryAfter() throws Exception {
+		String token = loginAndGetToken("admin", "admin");
+
+		mockMvc.perform(post("/admin/maintenance/restore/start")
+						.header("Authorization", "Bearer " + token)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{
+								  "estimatedDurationSeconds": 180
+								}
+								"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.restoreInProgress").value(true))
+				.andExpect(jsonPath("$.retryAfterSeconds", greaterThanOrEqualTo(1)));
+
+		mockMvc.perform(post("/posts")
+						.header("Authorization", "Bearer " + token)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{
+								  "title": "Blocked during restore",
+								  "content": "Should return 503"
+								}
+								"""))
+				.andExpect(status().isServiceUnavailable())
+				.andExpect(header().exists("Retry-After"))
+				.andExpect(jsonPath("$.error").value("service_unavailable"));
+
+		mockMvc.perform(post("/admin/maintenance/restore/finish")
+						.header("Authorization", "Bearer " + token))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.restoreInProgress").value(false));
+	}
+
+	@Test
+	void restoreMode_keepsHealthEndpointAccessible() throws Exception {
+		String token = loginAndGetToken("admin", "admin");
+
+		mockMvc.perform(post("/admin/maintenance/restore/start")
+						.header("Authorization", "Bearer " + token))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(get("/actuator/health"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("UP"));
+
+		mockMvc.perform(post("/admin/maintenance/restore/finish")
+						.header("Authorization", "Bearer " + token))
+				.andExpect(status().isOk());
+	}
+
+	@Test
+	void maintenanceEndpoints_requireAdminAuthentication() throws Exception {
+		mockMvc.perform(post("/admin/maintenance/restore/start"))
+				.andExpect(status().isForbidden());
+	}
+
+	@Test
+	void restoreFinish_reopensEndpoints() throws Exception {
+		String token = loginAndGetToken("admin", "admin");
+
+		mockMvc.perform(post("/admin/maintenance/restore/start")
+						.header("Authorization", "Bearer " + token))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(post("/admin/maintenance/restore/finish")
+						.header("Authorization", "Bearer " + token))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(post("/posts")
+						.header("Authorization", "Bearer " + token)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{
+								  "title": "After restore",
+								  "content": "Back online"
+								}
+								"""))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.title").value("After restore"));
 	}
 
 	private String loginAndGetToken(String username, String password) throws Exception {
