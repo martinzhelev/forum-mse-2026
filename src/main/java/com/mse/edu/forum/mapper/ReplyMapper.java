@@ -15,10 +15,13 @@ public interface ReplyMapper {
 
 	@Mapping(target = "id", ignore = true)
 	@Mapping(target = "createdAt", ignore = true)
+	@Mapping(target = "post", ignore = true)
+	@Mapping(target = "user", ignore = true)
 	@Mapping(target = "content", source = "request.content", qualifiedByName = "trimmed")
-	ReplyEntity toEntity(CreateReplyRequest request, Long postId);
+	ReplyEntity toEntity(CreateReplyRequest request);
 
 	@Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "instantToOffset")
+	@Mapping(target = "postId", source = "post.id")
 	ReplyResponse toResponse(ReplyEntity entity);
 
 	@Named("trimmed")

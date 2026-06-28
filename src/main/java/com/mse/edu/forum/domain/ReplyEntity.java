@@ -33,13 +33,13 @@ public class ReplyEntity {
 	@Column(nullable = false, updatable = false)
 	private Instant createdAt;
 
-    @ManyToOne
-    @JoinColumn(name = "post_id")
-    private PostEntity post;
+	@ManyToOne(optional = false)
+	@JoinColumn(name = "post_id", nullable = false)
+	private PostEntity post;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private UserEntity user;
+	@ManyToOne(optional = false)
+	@JoinColumn(name = "user_id", nullable = false)
+	private UserEntity user;
 
 	@PrePersist
 	void onCreate() {

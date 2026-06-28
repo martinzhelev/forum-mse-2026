@@ -388,6 +388,9 @@ components:
         content:
           type: string
           maxLength: 10000
+        userId:
+          type: integer
+          format: int64
     PostResponse:
       type: object
       required: [id, title, content, createdAt]

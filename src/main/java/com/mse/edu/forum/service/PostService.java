@@ -28,9 +28,9 @@ public class PostService {
 
 	@Transactional(readOnly = true)
 	public List<PostResponse> findAll() {
-		return entityListToResponse(postRepository.findAll());
+//		return entityListToResponse(postRepository.findAll());
 //      return entityListToResponse(postRepository.findAll(PageRequest.of(0,2)).getContent());
-//      return entityListToResponse(postRepository.findByUserId((long)2));
+      return entityListToResponse(postRepository.findByUserId((long)2));
 //      return entityListToResponse(postRepository.whatDoesThisQueryFindByUserId((long)2));
 //      return entityListToResponse(postRepositoryCustom.findPostsByUserId((long)2));
 	}
