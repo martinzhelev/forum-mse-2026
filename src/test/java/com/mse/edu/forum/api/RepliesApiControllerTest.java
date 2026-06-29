@@ -44,6 +44,7 @@ class RepliesApiControllerTest {
 		registry.add("spring.datasource.username", POSTGRES::getUsername);
 		registry.add("spring.datasource.password", POSTGRES::getPassword);
 		registry.add("spring.datasource.driver-class-name", POSTGRES::getDriverClassName);
+		registry.add("app.jwt.secret", () -> "test-jwt-secret-at-least-32-characters");
 	}
 
 	@Autowired
@@ -95,6 +96,8 @@ class RepliesApiControllerTest {
 				.andExpect(jsonPath("$.id").isNumber())
 				.andExpect(jsonPath("$.postId").value(postId))
 				.andExpect(jsonPath("$.content").value("First reply"))
+				.andExpect(jsonPath("$.author.username").value("admin"))
+				.andExpect(jsonPath("$.modifiedAt").exists())
 				.andExpect(jsonPath("$.createdAt").exists())
 				.andReturn();
 
@@ -102,13 +105,39 @@ class RepliesApiControllerTest {
 
 		mockMvc.perform(get("/posts/{postId}/replies", postId))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$[0].id").value(replyId))
-				.andExpect(jsonPath("$[0].postId").value(postId));
+				.andExpect(jsonPath("$.page").value(0))
+				.andExpect(jsonPath("$.size").value(10))
+				.andExpect(jsonPath("$.totalElements").value(1))
+				.andExpect(jsonPath("$.items[0].id").value(replyId))
+				.andExpect(jsonPath("$.items[0].postId").value(postId));
 
 		mockMvc.perform(get("/replies/{id}", replyId))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(replyId))
-				.andExpect(jsonPath("$.postId").value(postId));
+				.andExpect(jsonPath("$.postId").value(postId))
+				.andExpect(jsonPath("$.author.username").value("admin"));
+	}
+
+	@Test
+	void listRepliesUsesRequestedPageSize() throws Exception {
+		String token = loginAndGetToken();
+		for (int i = 1; i <= 12; i++) {
+			mockMvc.perform(post("/posts/{postId}/replies", postId)
+							.header("Authorization", "Bearer " + token)
+							.contentType(MediaType.APPLICATION_JSON)
+							.content("""
+									{"content": "Reply %d"}
+									""".formatted(i)))
+					.andExpect(status().isCreated());
+		}
+
+		mockMvc.perform(get("/posts/{postId}/replies?page=1&size=10", postId))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.page").value(1))
+				.andExpect(jsonPath("$.size").value(10))
+				.andExpect(jsonPath("$.totalElements").value(12))
+				.andExpect(jsonPath("$.totalPages").value(2))
+				.andExpect(jsonPath("$.items.length()").value(2));
 	}
 
 	@Test

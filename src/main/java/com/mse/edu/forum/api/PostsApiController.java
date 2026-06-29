@@ -3,6 +3,7 @@ package com.mse.edu.forum.api;
 import com.mse.edu.forum.api.generated.PostsApi;
 import com.mse.edu.forum.api.generated.model.CreatePostRequest;
 import com.mse.edu.forum.api.generated.model.PostResponse;
+import com.mse.edu.forum.api.generated.model.UpdatePostRequest;
 import com.mse.edu.forum.service.PostService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -34,7 +35,7 @@ public class PostsApiController implements PostsApi {
 	public ResponseEntity<PostResponse> getPostById(Long id) {
 		log.debug("getPostById invoked id={}", id);
 		return postService
-				.findById(id)
+				.findByIdAndIncrementViewCount(id)
 				.map(ResponseEntity::ok)
 				.orElseGet(() -> ResponseEntity.notFound().build());
 	}
@@ -45,5 +46,15 @@ public class PostsApiController implements PostsApi {
 		log.debug("createPost invoked title={}", createPostRequest.getTitle());
 		PostResponse created = postService.create(createPostRequest);
 		return ResponseEntity.status(HttpStatus.CREATED).body(created);
+	}
+
+	@Override
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<PostResponse> updatePost(Long id, @Valid UpdatePostRequest updatePostRequest) {
+		log.debug("updatePost invoked id={}", id);
+		return postService
+				.update(id, updatePostRequest)
+				.map(ResponseEntity::ok)
+				.orElseGet(() -> ResponseEntity.notFound().build());
 	}
 }

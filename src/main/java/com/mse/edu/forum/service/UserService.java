@@ -1,6 +1,7 @@
 package com.mse.edu.forum.service;
 
 import com.mse.edu.forum.api.generated.model.CreateUserRequest;
+import com.mse.edu.forum.api.generated.model.RegisterUserRequest;
 import com.mse.edu.forum.api.generated.model.UpdateUserRequest;
 import com.mse.edu.forum.api.generated.model.UserResponse;
 import com.mse.edu.forum.domain.UserEntity;
@@ -43,15 +44,28 @@ public class UserService {
 	@Transactional
 	public UserResponse create(CreateUserRequest request) {
 		UserEntity entity = userMapper.toEntity(request);
-		if (userRepository.existsByUsername(entity.getUsername())) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken");
-		}
-		if (entity.getEmail() != null && userRepository.existsByEmail(entity.getEmail())) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
-		}
+		ensureUniqueUserFields(entity.getUsername(), entity.getEmail());
 		entity.setPasswordHash(passwordEncoder.encode(request.getPassword()));
 		UserEntity saved = userRepository.save(entity);
 		return userMapper.toResponse(saved);
+	}
+
+	@Transactional
+	public UserResponse register(RegisterUserRequest request) {
+		UserEntity entity = userMapper.toEntity(request);
+		ensureUniqueUserFields(entity.getUsername(), entity.getEmail());
+		entity.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+		UserEntity saved = userRepository.save(entity);
+		return userMapper.toResponse(saved);
+	}
+
+	private void ensureUniqueUserFields(String username, String email) {
+		if (userRepository.existsByUsername(username)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken");
+		}
+		if (email != null && userRepository.existsByEmail(email)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+		}
 	}
 
 	@Transactional

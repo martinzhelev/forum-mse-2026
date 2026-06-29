@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,6 +34,9 @@ public class ReplyEntity {
 	@Column(nullable = false, updatable = false)
 	private Instant createdAt;
 
+	@Column(nullable = false)
+	private Instant modifiedAt;
+
 	@ManyToOne(optional = false)
 	@JoinColumn(name = "post_id", nullable = false)
 	private PostEntity post;
@@ -46,5 +50,13 @@ public class ReplyEntity {
 		if (createdAt == null) {
 			createdAt = Instant.now();
 		}
+		if (modifiedAt == null) {
+			modifiedAt = createdAt;
+		}
+	}
+
+	@PreUpdate
+	void onUpdate() {
+		modifiedAt = Instant.now();
 	}
 }

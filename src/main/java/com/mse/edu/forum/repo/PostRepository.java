@@ -7,7 +7,13 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface PostRepository extends JpaRepository<PostEntity, Long> {
+    List<PostEntity> findAllByOrderByIdAsc();
+
     List<PostEntity> findByUserId(Long userId);
+
+    boolean existsByTitle(String title);
+
+    boolean existsByTitleAndIdNot(String title, Long id);
 
     @Query("""
             SELECT post
