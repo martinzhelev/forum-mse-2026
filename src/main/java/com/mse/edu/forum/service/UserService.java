@@ -1,7 +1,9 @@
 package com.mse.edu.forum.service;
 
 import com.mse.edu.forum.api.generated.model.CreateUserRequest;
+import com.mse.edu.forum.api.generated.model.RegisterUserRequest;
 import com.mse.edu.forum.api.generated.model.UpdateUserRequest;
+import com.mse.edu.forum.api.generated.model.UserRole;
 import com.mse.edu.forum.api.generated.model.UserResponse;
 import com.mse.edu.forum.domain.UserEntity;
 import com.mse.edu.forum.mapper.UserMapper;
@@ -42,16 +44,32 @@ public class UserService {
 
 	@Transactional
 	public UserResponse create(CreateUserRequest request) {
+		if (request.getRole() == UserRole.ADMIN) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admins can only create users or moderators");
+		}
 		UserEntity entity = userMapper.toEntity(request);
-		if (userRepository.existsByUsername(entity.getUsername())) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken");
-		}
-		if (entity.getEmail() != null && userRepository.existsByEmail(entity.getEmail())) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
-		}
+		ensureUniqueUserFields(entity.getUsername(), entity.getEmail());
 		entity.setPasswordHash(passwordEncoder.encode(request.getPassword()));
 		UserEntity saved = userRepository.save(entity);
 		return userMapper.toResponse(saved);
+	}
+
+	@Transactional
+	public UserResponse register(RegisterUserRequest request) {
+		UserEntity entity = userMapper.toEntity(request);
+		ensureUniqueUserFields(entity.getUsername(), entity.getEmail());
+		entity.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+		UserEntity saved = userRepository.save(entity);
+		return userMapper.toResponse(saved);
+	}
+
+	private void ensureUniqueUserFields(String username, String email) {
+		if (userRepository.existsByUsername(username)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken");
+		}
+		if (email != null && userRepository.existsByEmail(email)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+		}
 	}
 
 	@Transactional
@@ -61,6 +79,9 @@ public class UserService {
 			return Optional.empty();
 		}
 		UserEntity entity = existing.get();
+		if (request.getRole() == UserRole.ADMIN && !isSelf(id)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admins can only promote other users to moderators");
+		}
 		if (!isAdmin()) {
 			if (!userMapper.toApiRole(entity.getRole()).equals(request.getRole())) {
 				throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can change roles");
@@ -98,5 +119,13 @@ public class UserService {
 			return false;
 		}
 		return u.getAuthorities().stream().anyMatch(x -> "ROLE_ADMIN".equals(x.getAuthority()));
+	}
+
+	private static boolean isSelf(Long id) {
+		Authentication a = SecurityContextHolder.getContext().getAuthentication();
+		if (a == null || !(a.getPrincipal() instanceof ForumUserDetails u)) {
+			return false;
+		}
+		return u.getId() == id;
 	}
 }

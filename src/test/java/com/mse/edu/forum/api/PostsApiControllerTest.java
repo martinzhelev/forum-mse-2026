@@ -43,6 +43,7 @@ class PostsApiControllerTest {
 		registry.add("spring.datasource.username", POSTGRES::getUsername);
 		registry.add("spring.datasource.password", POSTGRES::getPassword);
 		registry.add("spring.datasource.driver-class-name", POSTGRES::getDriverClassName);
+		registry.add("app.jwt.secret", () -> "test-jwt-secret-at-least-32-characters");
 	}
 
 	@Autowired
@@ -73,6 +74,9 @@ class PostsApiControllerTest {
 				.andExpect(jsonPath("$.id").isNumber())
 				.andExpect(jsonPath("$.title").value("My first post"))
 				.andExpect(jsonPath("$.content").value("Hello from MockMvc + Testcontainers"))
+				.andExpect(jsonPath("$.author.username").value("admin"))
+				.andExpect(jsonPath("$.modifiedAt").exists())
+				.andExpect(jsonPath("$.viewCount").value(0))
 				.andExpect(jsonPath("$.createdAt").exists());
 
 		mockMvc.perform(get("/posts"))
@@ -116,7 +120,47 @@ class PostsApiControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(id))
 				.andExpect(jsonPath("$.title").value("Single post"))
-				.andExpect(jsonPath("$.content").value("For get by id"));
+				.andExpect(jsonPath("$.content").value("For get by id"))
+				.andExpect(jsonPath("$.viewCount").value(1));
+	}
+
+	@Test
+	void createPost_rejectsDuplicateTitle() throws Exception {
+		String token = loginAndGetToken("admin", "admin");
+		String body = """
+				{
+				  "title": "Unique title",
+				  "content": "First"
+				}
+				""";
+
+		mockMvc.perform(post("/posts")
+						.header("Authorization", "Bearer " + token)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(body))
+				.andExpect(status().isCreated());
+
+		mockMvc.perform(post("/posts")
+						.header("Authorization", "Bearer " + token)
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(body))
+				.andExpect(status().isConflict());
+	}
+
+	@Test
+	void registerCreatesRegularUser() throws Exception {
+		mockMvc.perform(post("/auth/register")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{
+								  "username": "student_user",
+								  "email": "student-user@example.com",
+								  "password": "password123"
+								}
+								"""))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.username").value("student_user"))
+				.andExpect(jsonPath("$.role").value("USER"));
 	}
 
 	@Test

@@ -67,6 +67,16 @@ set -a; source .env; set +a
 ./mvnw spring-boot:run
 ```
 
+Or on powershell:
+
+```bash
+Get-Content .env | ForEach-Object {
+    if ($_ -match '^\s*([^#][^=]*)=(.*)$') {
+        Set-Item -Path "Env:$($matches[1].Trim())" -Value $matches[2].Trim()
+    }
+}
+```
+
 5. Optional DB UI:
 
 ```bash

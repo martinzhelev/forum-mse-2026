@@ -1,9 +1,11 @@
 package com.mse.edu.forum.mapper;
 
 import com.mse.edu.forum.api.generated.model.CreateUserRequest;
+import com.mse.edu.forum.api.generated.model.RegisterUserRequest;
 import com.mse.edu.forum.api.generated.model.UpdateUserRequest;
 import com.mse.edu.forum.api.generated.model.UserResponse;
 import com.mse.edu.forum.api.generated.model.UserRole;
+import com.mse.edu.forum.api.generated.model.UserSummary;
 import com.mse.edu.forum.domain.UserEntity;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -19,18 +21,35 @@ public interface UserMapper {
 	@Mapping(target = "id", ignore = true)
 	@Mapping(target = "createdAt", ignore = true)
 	@Mapping(target = "passwordHash", ignore = true)
+	@Mapping(target = "posts", ignore = true)
+	@Mapping(target = "replies", ignore = true)
 	@Mapping(target = "username", source = "username", qualifiedByName = "trimmed")
 	@Mapping(target = "email", source = "email", qualifiedByName = "normalizeEmail")
 	@Mapping(target = "role", source = "role")
 	UserEntity toEntity(CreateUserRequest request);
 
+	@Mapping(target = "id", ignore = true)
+	@Mapping(target = "createdAt", ignore = true)
+	@Mapping(target = "passwordHash", ignore = true)
+	@Mapping(target = "posts", ignore = true)
+	@Mapping(target = "replies", ignore = true)
+	@Mapping(target = "username", source = "username", qualifiedByName = "trimmed")
+	@Mapping(target = "email", source = "email", qualifiedByName = "normalizeEmail")
+	@Mapping(target = "role", constant = "USER")
+	UserEntity toEntity(RegisterUserRequest request);
+
 	@Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "instantToOffset")
 	@Mapping(target = "role", source = "role")
 	UserResponse toResponse(UserEntity entity);
 
+	@Mapping(target = "role", source = "role")
+	UserSummary toSummary(UserEntity entity);
+
 	@Mapping(target = "id", ignore = true)
 	@Mapping(target = "createdAt", ignore = true)
 	@Mapping(target = "passwordHash", ignore = true)
+	@Mapping(target = "posts", ignore = true)
+	@Mapping(target = "replies", ignore = true)
 	@Mapping(target = "username", source = "username", qualifiedByName = "trimmed")
 	@Mapping(target = "email", source = "email", qualifiedByName = "normalizeEmail")
 	@Mapping(target = "role", source = "role")

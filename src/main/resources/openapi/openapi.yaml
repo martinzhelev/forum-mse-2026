@@ -13,7 +13,7 @@ tags:
   - name: Auth
     description: Authentication
   - name: Posts
-    description: Post operations
+    description: Topic operations
   - name: Replies
     description: Replies on posts
   - name: Users
@@ -43,11 +43,33 @@ paths:
         "401":
           description: Invalid credentials
 
+  /auth/register:
+    post:
+      tags: [Auth]
+      operationId: register
+      summary: Register a regular user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterUserRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "409":
+          description: Username or email already in use
+
   /posts:
     get:
       tags: [Posts]
       operationId: listPosts
-      summary: List all posts
+      summary: List all topics
       security: []
       responses:
         "200":
@@ -62,7 +84,7 @@ paths:
     post:
       tags: [Posts]
       operationId: createPost
-      summary: Create a post
+      summary: Create a topic
       requestBody:
         required: true
         content:
@@ -76,12 +98,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PostResponse"
+        "409":
+          description: Title already in use
 
   /posts/{id}:
     get:
       tags: [Posts]
       operationId: getPostById
-      summary: Get post by id
+      summary: Open topic by id
       security: []
       parameters:
         - name: id
@@ -100,11 +124,42 @@ paths:
         "404":
           description: Not found
 
+    put:
+      tags: [Posts]
+      operationId: updatePost
+      summary: Update a topic
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePostRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostResponse"
+        "403":
+          description: Not allowed to edit this topic
+        "404":
+          description: Not found
+        "409":
+          description: Title already in use
+
   /posts/{postId}/replies:
     get:
       tags: [Replies]
       operationId: listRepliesForPost
-      summary: List replies for a post
+      summary: List replies for a topic, paginated by 10 by default
       security: []
       parameters:
         - name: postId
@@ -113,15 +168,30 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 10
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ReplyResponse"
+                $ref: "#/components/schemas/ReplyPageResponse"
         "404":
           description: Post not found
 
@@ -172,6 +242,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReplyResponse"
+        "404":
+          description: Not found
+
+    put:
+      tags: [Replies]
+      operationId: updateReply
+      summary: Update a reply
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateReplyRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReplyResponse"
+        "403":
+          description: Not allowed to edit this reply
         "404":
           description: Not found
 
@@ -338,6 +437,24 @@ components:
           maxLength: 72
           description: Stored as a bcrypt hash; max 72 bytes for bcrypt.
 
+    RegisterUserRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          maxLength: 320
+        password:
+          type: string
+          minLength: 8
+          maxLength: 72
+          description: Stored as a bcrypt hash; max 72 bytes for bcrypt.
+
     UpdateUserRequest:
       type: object
       required: [username, role]
@@ -378,6 +495,18 @@ components:
           type: string
           format: date-time
 
+    UserSummary:
+      type: object
+      required: [id, username, role]
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+
     CreatePostRequest:
       type: object
       required: [title, content]
@@ -388,9 +517,22 @@ components:
         content:
           type: string
           maxLength: 10000
+
+    UpdatePostRequest:
+      type: object
+      required: [title, content]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+        content:
+          type: string
+          maxLength: 10000
+
     PostResponse:
       type: object
-      required: [id, title, content, createdAt]
+      required: [id, title, content, author, createdAt, modifiedAt, viewCount]
       properties:
         id:
           type: integer
@@ -399,9 +541,17 @@ components:
           type: string
         content:
           type: string
+        author:
+          $ref: "#/components/schemas/UserSummary"
         createdAt:
           type: string
           format: date-time
+        modifiedAt:
+          type: string
+          format: date-time
+        viewCount:
+          type: integer
+          format: int64
 
     CreateReplyRequest:
       type: object
@@ -411,9 +561,17 @@ components:
           type: string
           maxLength: 10000
 
+    UpdateReplyRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          maxLength: 10000
+
     ReplyResponse:
       type: object
-      required: [id, postId, content, createdAt]
+      required: [id, postId, content, author, createdAt, modifiedAt]
       properties:
         id:
           type: integer
@@ -423,9 +581,35 @@ components:
           format: int64
         content:
           type: string
+        author:
+          $ref: "#/components/schemas/UserSummary"
         createdAt:
           type: string
           format: date-time
+        modifiedAt:
+          type: string
+          format: date-time
+
+    ReplyPageResponse:
+      type: object
+      required: [items, page, size, totalElements, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReplyResponse"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
 
 security:
   - bearerAuth: []
