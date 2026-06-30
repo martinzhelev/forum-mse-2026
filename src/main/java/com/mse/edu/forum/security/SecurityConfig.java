@@ -41,7 +41,7 @@ public class SecurityConfig {
 				.requestMatchers("/error").permitAll()
 				.anyRequest()
 				.authenticated());
-		http.addFilterBefore(maintenanceModeFilter, JwtAuthenticationFilter.class);
+		http.addFilterBefore(maintenanceModeFilter, UsernamePasswordAuthenticationFilter.class);
 		http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 		return http.build();
 	}
