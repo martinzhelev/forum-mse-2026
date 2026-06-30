@@ -1,4 +1,4 @@
-# Common Ground Forum
+# Forum MSE 2026
 
 A Spring Boot forum application with PostgreSQL, JWT authentication, Flyway database migrations, OpenAPI documentation, and a bundled browser UI.
 
