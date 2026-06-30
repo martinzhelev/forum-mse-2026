@@ -24,8 +24,8 @@ function Shell() {
     <div className="app-shell">
       <header className="topbar">
         <Link className="brand" to="/">
-          <span className="brand-mark">CG</span>
-          <span><strong>Common Ground</strong><small>Ideas worth discussing</small></span>
+          <span className="brand-mark">MSE</span>
+          <span><strong>Forum MSE</strong><small>Ideas worth discussing</small></span>
         </Link>
         <nav>
           <NavLink to="/">Forum</NavLink>
@@ -52,7 +52,7 @@ function Shell() {
         <Route path="/maintenance" element={<RoleGate roles={["ADMIN"]}><MaintenancePage /></RoleGate>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes></main>
-      <footer><span>Common Ground Forum</span><a href="/docs" target="_blank">API documentation</a></footer>
+      <footer><span>Forum MSE</span><a href="/docs" target="_blank">API documentation</a></footer>
     </div>
   );
 }

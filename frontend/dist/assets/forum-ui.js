@@ -168,8 +168,8 @@ function app() {
     <div class="shell">
       <header class="topbar">
         <div class="brand">
-          <span class="brand-mark">CG</span>
-          <span>Common Ground Forum</span>
+          <span class="brand-mark">MSE</span>
+          <span>Forum MSE</span>
         </div>
         <nav class="nav">
           ${navButton("topics", "Topics")}
