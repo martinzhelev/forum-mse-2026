@@ -331,16 +331,15 @@ function authView() {
     <section class="grid">
       <form class="panel form" data-form="login">
         <h2>Login</h2>
-        <label>Username <input name="username" required value="admin" /></label>
-        <label>Password <input name="password" type="password" required value="admin" /></label>
+        <label>Username <input name="username" required autocomplete="off" /></label>
+        <label>Password <input name="password" type="password" required autocomplete="new-password" /></label>
         <button class="button">Login</button>
-        <span class="small">Default admin: admin / admin</span>
       </form>
       <form class="panel form" data-form="register">
         <h2>Register User</h2>
-        <label>Username <input name="username" required maxlength="100" /></label>
-        <label>Email <input name="email" type="email" maxlength="320" /></label>
-        <label>Password <input name="password" type="password" minlength="8" maxlength="72" required /></label>
+        <label>Username <input name="username" required maxlength="100" autocomplete="off" /></label>
+        <label>Email <input name="email" type="email" maxlength="320" autocomplete="off" /></label>
+        <label>Password <input name="password" type="password" minlength="8" maxlength="72" required autocomplete="new-password" /></label>
         <button class="button">Register</button>
         <span class="small">Registration always creates a regular USER account.</span>
       </form>
@@ -384,7 +383,6 @@ function usersView() {
             <select name="role">
               <option>USER</option>
               <option>MODERATOR</option>
-              <option>ADMIN</option>
             </select>
           </label>
           <label>Password <input name="password" type="password" minlength="8" maxlength="72" required /></label>
@@ -408,7 +406,6 @@ function userRow(user) {
           <select name="role">
             <option ${user.role === "USER" ? "selected" : ""}>USER</option>
             <option ${user.role === "MODERATOR" ? "selected" : ""}>MODERATOR</option>
-            <option ${user.role === "ADMIN" ? "selected" : ""}>ADMIN</option>
           </select>
           <input name="password" class="hidden" value="" />
           <button class="button secondary">Save</button>
